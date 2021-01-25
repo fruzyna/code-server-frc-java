@@ -2,7 +2,7 @@
 
 name=$1
 pass=$2
-port=$3 # TODO intelligently generate port number
+port=$3
 
 sudo=[sudo password here]
 
