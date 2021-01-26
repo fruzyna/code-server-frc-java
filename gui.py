@@ -24,7 +24,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
                 query[parts[0]] = parts[1]
 
             # determine next port
-            process = subprocess.Popen(['docker', 'container', 'ls', '--format', '"{{.Ports}}"'], stdout=subprocess.PIPE)
+            process = subprocess.Popen(['docker', 'container', 'ls', '--format', '"{{.Ports}}"', '--filter', 'code-server-*'], stdout=subprocess.PIPE)
             output, error = process.communicate()
             port_str = str(output)
             if ':' in port_str and '-' in port_str:
@@ -34,24 +34,29 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
                 port = MIN_PORT
 
             # check for correct parameters
-            if port >= MIN_PORT and port <= MAX_PORT and \
-                'name' in query and 'pass' in query and \
-                'code' in query and query['code'] == PASSWORD:
+            if port >= MIN_PORT and port <= MAX_PORT:
+                if 'name' in query and 'pass' in query:
+                    if 'code' in query and query['code'] == PASSWORD:
+                        # launch
+                        subprocess.Popen(['./create-instance.sh', query['name'], query['pass'], str(port)])
+                        ip = socket.gethostbyname(socket.gethostname())
+                        url = 'http://{0}:{1}</a>'.format(ip, port)
+                        # use if using a reverse proxy
+                        #ip = 'code.mydomain.tld'
+                        #url = 'http://{0}/{1}</a>'.format(ip, query['name'])
 
-                # launch
-                subprocess.Popen(['./create-instance.sh', query['name'], query['pass'], str(port)])
-                ip = socket.gethostbyname(socket.gethostname())
-                url = 'http://{0}:{1}</a>'.format(ip, port)
-                // use if using a reverse proxy
-                // ip = 'code.mydomain.tld'
-                // url = 'http://{0}/{1}</a>'.format(ip, query['name'])
-
-                # send redirect page
-                self.send_response(200)
-                self.send_header('Content-type', 'text/html')
-                self.end_headers()
-                self.wfile.write(str.encode('<meta http-equiv="refresh" content="10; URL={0}" /><h1>Redirecting to code-server in 10 seconds</h1><a href="{0}">{0}</a>'.format(url)))
-                return
+                        # send redirect page
+                        self.send_response(200)
+                        self.send_header('Content-type', 'text/html')
+                        self.end_headers()
+                        self.wfile.write(str.encode('<meta http-equiv="refresh" content="10; URL={0}" /><h1>Redirecting to code-server in 10 seconds</h1><a href="{0}">{0}</a>'.format(url)))
+                        return
+                    else:
+                        print('invalid password')
+                else:
+                    print('invalid user')
+            else:
+                print('invalid port')
 
         return http.server.SimpleHTTPRequestHandler.do_GET(self)
 
