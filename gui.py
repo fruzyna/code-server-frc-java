@@ -3,7 +3,7 @@ import socketserver, http.server, subprocess, socket
 PORT = 8000
 MIN_PORT = 8110
 MAX_PORT = 8119
-PASSWORD = [PASSWORD STRING]
+PASSWORD = "[PASSWORD STRING]"
 
 class ServerHandler(http.server.SimpleHTTPRequestHandler):
 
@@ -14,6 +14,37 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+
+        if self.path.startswith('/status'):
+            # get container status
+            status_strs = str(subprocess.check_output(['docker', 'container', 'ls', '-a', '--format', '{{.Names}} {{.Status}} {{.Ports}}', '--filter', 'name=code-server-*']))[2:-1].split('\\n')
+            
+            # build table
+            table = '<table><tr><td>Name</td><td>Uptime</td><td>Port</td><td></td><td></td></tr>'
+            for line in status_strs:
+                if line.count(' ') >= 2:
+                    words = line.split()
+                    name = words[0].replace('code-server-', '')
+                    uptime = words[1:-1]
+                    if len(uptime) == 3 and uptime[0] == 'Up':
+                        uptime = ' '.join(uptime[1:3])
+                    else:
+                        uptime = uptime[0]
+                    port = words[-1]
+                    if ':' in port and '-' in port:
+                        port = port[port.index(':')+1:port.index('-')]
+                    else:
+                        port = ''
+                    ip = socket.gethostbyname(socket.gethostname())
+                    table += '<tr><td>{0}</td><td>{1}</td><td>{2}</td><td><a href="https://code.fruzyna.net/{0}">External Link</a></td><td><a href="http://{3}:{2}">Internal Link</a></td></tr>'.format(name, uptime, port, ip)
+            table += '</table>'
+
+            # send table
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(str.encode(table))
+            return
 
         if self.path.startswith('/createInstance'):
             # process query
