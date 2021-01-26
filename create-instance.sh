@@ -4,11 +4,16 @@ name=$1
 pass=$2
 port=$3
 
+proxypath=[/path/to/proxy-confs]
+domain=[code.domain.tld]
 sudo=[sudo password here]
+
+container_name=code-server-${name}
 
 # TODO create volume of limited size, without overwriting contents of /config
 
-docker run -d --name code-server-${name} \
+# start docker container
+docker run -d --name $container_name \
 		   -e PUID=1000 -e PGID=1000 -e TZ=America/Chicago \
 		   -e PASSWORD=$2 -e SUDO_PASSWORD=$sudo \
 		   -p $port:8443 \
@@ -16,4 +21,11 @@ docker run -d --name code-server-${name} \
 		   --restart unless-stopped \
 		   mail929/code-server-frc-java
 
-# TODO add reverse proxy entry
+# generate reverse proxy entry
+config=$(<code.subfolder.conf.sample)
+config="${config/DOMAIN/$domain}"
+config="${config//NAME/$name}"
+config="${config/CONTAINER_PORT/$port}"
+tee ${proxypath}/${name}.code.subfolder.conf <<< $config
+
+docker restart reverse-proxy

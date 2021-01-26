@@ -41,12 +41,16 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
                 # launch
                 subprocess.Popen(['./create-instance.sh', query['name'], query['pass'], str(port)])
                 ip = socket.gethostbyname(socket.gethostname())
+                url = 'http://{0}:{1}</a>'.format(ip, port)
+                // use if using a reverse proxy
+                // ip = 'code.mydomain.tld'
+                // url = 'http://{0}/{1}</a>'.format(ip, query['name'])
 
                 # send redirect page
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
-                self.wfile.write(str.encode('<meta http-equiv="refresh" content="10; URL=http://{0}:{1}" /><h1>Redirecting to code-server in 10 seconds</h1><a href="http://{0}:{1}">http://{0}:{1}</a>'.format(ip, port)))
+                self.wfile.write(str.encode('<meta http-equiv="refresh" content="10; URL={0}" /><h1>Redirecting to code-server in 10 seconds</h1><a href="{0}">{0}</a>'.format(url)))
                 return
 
         return http.server.SimpleHTTPRequestHandler.do_GET(self)
