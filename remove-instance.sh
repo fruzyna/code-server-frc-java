@@ -2,7 +2,7 @@
 
 name=$1
 
-proxypath=[/path/to/proxy-confs]
+proxypath=$(<config/proxy_path)
 
 # TODO remove volume
 

@@ -1,12 +1,12 @@
 import socketserver, http.server, subprocess, socket
 
-PORT = 8000
-MIN_PORT = 8110
-MAX_PORT = 8119
+PORT = int(open('config/gui_port', 'r').read())
+MIN_PORT = int(open('config/min_port', 'r').read())
+MAX_PORT = int(open('config/max_port', 'r').read())
 
-PASSWORD = [PASSWORD STRING]
-SERVER_PATH = ''
-EXTERNAL_URL = ''
+PASSWORD = open('config/gui_password', 'r').read()
+SERVER_PATH = '/' + open('config/gui_path', 'r').read()
+EXTERNAL_URL = open('config/domain', 'r').read()
 
 class ServerHandler(http.server.SimpleHTTPRequestHandler):
 
@@ -87,7 +87,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
                     else:
                         port = ''
                     ip = socket.gethostbyname(socket.gethostname())
-                    table += '<tr><td>{0}</td><td>{1}</td><td>{2}</td><td><a href="{6}/{0}">External Link</a></td><td><a href="http://{3}:{2}">Internal Link</a></td><td>{4}</td><td>{5}</td></tr>'.format(name, uptime, port, ip, control, remove, EXTERNAL_URL)
+                    table += '<tr><td>{0}</td><td>{1}</td><td>{2}</td><td><a href="https://{6}/{0}">External Link</a></td><td><a href="http://{3}:{2}">Internal Link</a></td><td>{4}</td><td>{5}</td></tr>'.format(name, uptime, port, ip, control, remove, EXTERNAL_URL)
             table += '</table>'
 
             # send table
@@ -117,8 +117,8 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
                             subprocess.Popen(['./create-instance.sh', query['name'], query['pass'], str(port)])
                             ip = socket.gethostbyname(socket.gethostname())
                             url = 'http://{0}:{1}</a>'.format(ip, port)
-                            # if using a reverse proxy
-                            #url = 'http://{0}/{1}</a>'.format(EXTERNAL_URL, query['name'])
+                            if EXTERNAL_URL:
+                                url = 'https://{0}/{1}</a>'.format(EXTERNAL_URL, query['name'])
 
                             # send redirect page
                             self.send_res('<meta http-equiv="refresh" content="10; URL={0}" /><h1>Redirecting to code-server in 10 seconds</h1><a href="{0}">{0}</a>'.format(url))

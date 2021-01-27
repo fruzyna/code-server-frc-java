@@ -4,9 +4,9 @@ name=$1
 pass=$2
 port=$3
 
-proxypath=[/path/to/proxy-confs]
-domain=[code.domain.tld]
-sudo=[sudo password here]
+proxypath=$(<config/proxy_path)
+domain=$(<config/domain)
+sudo=$(<config/sudo_password)
 
 container_name=code-server-${name}
 
