@@ -1,12 +1,18 @@
 import socketserver, http.server, subprocess, socket
 
-PORT = int(open('config/gui_port', 'r').read())
-MIN_PORT = int(open('config/min_port', 'r').read())
-MAX_PORT = int(open('config/max_port', 'r').read())
+def read_config(path):
+    config = ''
+    with open(path, 'r') as f:
+        config = f.read().rstrip()
+    return config
 
-PASSWORD = open('config/gui_password', 'r').read()
-SERVER_PATH = '/' + open('config/gui_path', 'r').read()
-EXTERNAL_URL = open('config/domain', 'r').read()
+PORT = int(read_config('config/gui_port'))
+MIN_PORT = int(read_config('config/min_port'))
+MAX_PORT = int(read_config('config/max_port'))
+
+PASSWORD = read_config('config/gui_password')
+SERVER_PATH = '/' + read_config('config/gui_path')
+EXTERNAL_URL = read_config('config/domain')
 
 class ServerHandler(http.server.SimpleHTTPRequestHandler):
 
