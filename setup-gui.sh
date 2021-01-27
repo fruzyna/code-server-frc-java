@@ -10,3 +10,5 @@ config="${config/DOMAIN/$domain}"
 config="${config//NAME/$guipath}"
 config="${config/CONTAINER_PORT/$guiport}"
 tee ${proxypath}/${guipath}.code.subfolder.conf <<< $config
+
+docker restart reverse-proxy
