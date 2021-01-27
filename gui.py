@@ -3,7 +3,10 @@ import socketserver, http.server, subprocess, socket
 PORT = 8000
 MIN_PORT = 8110
 MAX_PORT = 8119
-PASSWORD = "[PASSWORD STRING]"
+
+PASSWORD = [PASSWORD STRING]
+SERVER_PATH = ''
+EXTERNAL_URL = ''
 
 class ServerHandler(http.server.SimpleHTTPRequestHandler):
 
@@ -13,46 +16,85 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Content-type', 'text/html')
         self.end_headers()
 
+    def send_res(self, html_str):
+        self._set_response()
+        self.wfile.write(str.encode(html_str))
+
     def do_GET(self):
+        # process query
+        queries = self.path.split('?')
+        if len(queries) > 1:
+            queries = queries[1].split('&')
+            query = {}
+            for q in queries:
+                parts = q.split('=')
+                query[parts[0]] = parts[1].lower()
+
+        if self.path.startswith('/stop'):
+            if query['name']:
+                # stop container and send redirect
+                status_strs = str(subprocess.check_output(['docker', 'stop', query['name']]))
+                self.send_res('<meta http-equiv="refresh" content="10; URL={0}/status" />'.format(SERVER_PATH))
+            else:
+                self.send_res('<h1>Error no name provided</h1>')
+            return
+
+        if self.path.startswith('/start'):
+            if query['name']:
+                # start container and send redirect
+                status_strs = str(subprocess.check_output(['docker', 'start', query['name']]))
+                self.send_res('<meta http-equiv="refresh" content="10; URL={0}/status" />'.format(SERVER_PATH))
+            else:
+                self.send_res('<h1>Error no name provided</h1>')
+            return
+
+        if self.path.startswith('/remove'):
+            if query['name']:
+                # remove container and send redirect
+                status_strs = str(subprocess.check_output(['./remove-instance.sh', query['name']]))
+                self.send_res('<meta http-equiv="refresh" content="10; URL={0}/status" />'.format(SERVER_PATH))
+                # TODO delete proxy conf
+            else:
+                self.send_res('<h1>Error no name provided</h1>')
+            return
 
         if self.path.startswith('/status'):
             # get container status
             status_strs = str(subprocess.check_output(['docker', 'container', 'ls', '-a', '--format', '{{.Names}} {{.Status}} {{.Ports}}', '--filter', 'name=code-server-*']))[2:-1].split('\\n')
             
             # build table
-            table = '<table><tr><td>Name</td><td>Uptime</td><td>Port</td><td></td><td></td></tr>'
+            table = '<table><tr><td>Name</td><td>Uptime</td><td>Port</td><td></td><td></td><td></td><td></td></tr>'
             for line in status_strs:
                 if line.count(' ') >= 2:
                     words = line.split()
                     name = words[0].replace('code-server-', '')
-                    uptime = words[1:-1]
+                    if ':' in words[-1]:
+                        uptime = words[1:-1]
+                    else:
+                        uptime = words[1:]
+                    control = ''
+                    remove = ''
                     if len(uptime) == 3 and uptime[0] == 'Up':
                         uptime = ' '.join(uptime[1:3])
-                    else:
+                        control = '<a href="{0}/stop?name={1}">Stop</a>'.format(SERVER_PATH, words[0])
+                    elif uptime:
                         uptime = uptime[0]
+                        control = '<a href="{0}/start?name={1}">Resume</a>'.format(SERVER_PATH, words[0])
+                        remove = '<a href="{0}/remove?name={1}">Remove</a>'.format(SERVER_PATH, words[0])
                     port = words[-1]
                     if ':' in port and '-' in port:
                         port = port[port.index(':')+1:port.index('-')]
                     else:
                         port = ''
                     ip = socket.gethostbyname(socket.gethostname())
-                    table += '<tr><td>{0}</td><td>{1}</td><td>{2}</td><td><a href="https://code.fruzyna.net/{0}">External Link</a></td><td><a href="http://{3}:{2}">Internal Link</a></td></tr>'.format(name, uptime, port, ip)
+                    table += '<tr><td>{0}</td><td>{1}</td><td>{2}</td><td><a href="{6}/{0}">External Link</a></td><td><a href="http://{3}:{2}">Internal Link</a></td><td>{4}</td><td>{5}</td></tr>'.format(name, uptime, port, ip, control, remove, EXTERNAL_URL)
             table += '</table>'
 
             # send table
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            self.wfile.write(str.encode(table))
+            self.send_res(table)
             return
 
         if self.path.startswith('/createInstance'):
-            # process query
-            queries = self.path.split('?')[1].split('&')
-            query = {}
-            for q in queries:
-                parts = q.split('=')
-                query[parts[0]] = parts[1].lower()
 
             # determine next port
             port_str = str(subprocess.check_output(['docker', 'container', 'ls', '--format', '{{.Ports}}', '--filter', 'name=code-server-*']))[2:-1]
@@ -75,39 +117,23 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
                             subprocess.Popen(['./create-instance.sh', query['name'], query['pass'], str(port)])
                             ip = socket.gethostbyname(socket.gethostname())
                             url = 'http://{0}:{1}</a>'.format(ip, port)
-                            # use if using a reverse proxy
-                            #ip = 'code.mydomain.tld'
-                            #url = 'http://{0}/{1}</a>'.format(ip, query['name'])
+                            # if using a reverse proxy
+                            #url = 'http://{0}/{1}</a>'.format(EXTERNAL_URL, query['name'])
 
                             # send redirect page
-                            self.send_response(200)
-                            self.send_header('Content-type', 'text/html')
-                            self.end_headers()
-                            self.wfile.write(str.encode('<meta http-equiv="refresh" content="10; URL={0}" /><h1>Redirecting to code-server in 10 seconds</h1><a href="{0}">{0}</a>'.format(url)))
+                            self.send_res('<meta http-equiv="refresh" content="10; URL={0}" /><h1>Redirecting to code-server in 10 seconds</h1><a href="{0}">{0}</a>'.format(url))
                             return
                         else:
-                            self.send_response(200)
-                            self.send_header('Content-type', 'text/html')
-                            self.end_headers()
-                            self.wfile.write(str.encode('<h1>Invalid access code</h1>'))
+                            self.send_res('<h1>Invalid access code</h1>')
                             return
                     else:
-                        self.send_response(200)
-                        self.send_header('Content-type', 'text/html')
-                        self.end_headers()
-                        self.wfile.write(str.encode('<h1>Invalid password</h1>'))
+                        self.send_res('<h1>Invalid password</h1>')
                         return
                 else:
-                    self.send_response(200)
-                    self.send_header('Content-type', 'text/html')
-                    self.end_headers()
-                    self.wfile.write(str.encode('<h1>Invalid name</h1>'))
+                    self.send_res('<h1>Invalid name</h1>')
                     return
             else:
-                self.send_response(200)
-                self.send_header('Content-type', 'text/html')
-                self.end_headers()
-                self.wfile.write(str.encode('<h1>Error assigning port</h1>'))
+                self.send_res('<h1>Error assigning port</h1>')
                 return
 
         return http.server.SimpleHTTPRequestHandler.do_GET(self)
