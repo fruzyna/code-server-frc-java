@@ -10,7 +10,7 @@ PORT = int(read_config('config/gui_port'))
 MIN_PORT = int(read_config('config/min_port'))
 MAX_PORT = int(read_config('config/max_port'))
 
-PASSWORD = read_config('config/gui_password')
+PASSWORD = read_config('config/gui_password').lower()
 SERVER_PATH = '/' + read_config('config/gui_path')
 EXTERNAL_URL = read_config('config/domain')
 
