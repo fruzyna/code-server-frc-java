@@ -33,7 +33,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
         if self.path.startswith('/stop'):
             if query['name']:
                 # stop container and send redirect
-                status_strs = str(subprocess.check_output(['docker', 'stop', query['name']]))
+                status_strs = str(subprocess.check_output(['docker', 'stop', query['name'].split('-')[2]]))
                 self.send_res('<meta http-equiv="refresh" content="10; URL={0}/status" />'.format(SERVER_PATH))
             else:
                 self.send_res('<h1>Error no name provided</h1>')
