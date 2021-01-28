@@ -104,10 +104,12 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
             # determine next port
             port_str = str(subprocess.check_output(['docker', 'container', 'ls', '--format', '{{.Ports}}', '--filter', 'name=code-server-*']))[2:-1]
             ports = [ int(port[port.index(':')+1:port.index('-')]) for port in port_str.split('\\n') if ':' in port and '-' in port ]
-            if len(ports) > 0:
-                port = max(ports) + 1
-            else:
-                port = MIN_PORT
+            port = -1
+            # find holes in assigned ports, there is an issue here with stopped instances
+            for p in range(MIN_PORT, MAX_PORT+1):
+                if p not in ports:
+                    port = p
+                    break
 
             # determine taken names
             name_str = str(subprocess.check_output(['docker', 'container', 'ls', '--format', '{{.Names}}', '--filter', 'name=code-server-*']))[2:-1]
