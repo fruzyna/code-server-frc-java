@@ -2,7 +2,8 @@
 
 name=$1
 
-proxypath=$(<config/proxy_path)
+proxy_path=$(<config/proxy_path)
+proxy_container=$(<config/proxy_container)
 
 container_name=code-server-${name}
 
@@ -10,4 +11,5 @@ container_name=code-server-${name}
 
 docker stop $container_name
 docker rm $container_name
-rm ${proxypath}/${name}.code.subfolder.conf
+rm ${proxy_path}/${name}.code.subfolder.conf
+docker restart $proxy_container

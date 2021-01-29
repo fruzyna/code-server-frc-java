@@ -4,9 +4,10 @@ name=$1
 pass=$2
 port=$3
 
-proxypath=$(<config/proxy_path)
+proxy_path=$(<config/proxy_path)
 domain=$(<config/domain)
 sudo=$(<config/sudo_password)
+proxy_container=$(<config/proxy_container)
 
 container_name=code-server-${name}
 
@@ -26,6 +27,6 @@ config=$(<code.subfolder.conf.sample)
 config="${config/DOMAIN/$domain}"
 config="${config//NAME/$name}"
 config="${config/CONTAINER_PORT/$port}"
-tee ${proxypath}/${name}.code.subfolder.conf <<< $config
+tee ${proxy_path}/${name}.code.subfolder.conf <<< $config
 
-docker restart reverse-proxy
+docker restart $proxy_container
