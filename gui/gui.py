@@ -109,7 +109,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
                     else:
                         port = ''
                     ip = socket.gethostbyname(socket.gethostname())
-                    external_url = '<a href="https://{6}/{0}">External Link</a>'.format(name, EXTERNAL_URL) if EXTERNAL_URL else ''
+                    external_url = '<a href="https://{1}/{0}">External Link</a>'.format(name, EXTERNAL_URL) if EXTERNAL_URL else ''
                     table += '<tr><td>{0}</td><td>{1}</td><td>{2}</td><td><a href="http://{3}:{2}">Internal Link</a></td><td>{6}</td><td>{4}</td><td>{5}</td></tr>'.format(name, uptime, port, ip, control, remove, external_url)
             table += '</table>'
 
