@@ -24,7 +24,7 @@ To undo the `create-instance.sh` script the `remove-instance.sh` script stops an
 
 ## gui.py Web GUI
 
-To allow easier management of these instances there is a modified [Python HTTP server](https://docs.python.org/3/library/http.server.html). The server can also operate through a reverse proxy and has a `setup-gui.sh` script to prepare the config file and restart the proxy. The only thing this script doesn't do is adjust the `index.html` file to submit its form to the appropriate subfolder. Speaking of which the index of the GUI allows creation of a new instance at a path of the submitted name. This page can be secured with an access code set at `config/gui_password`. The `/status` page allows stopping, restarting, and removing of currently created containers.
+To allow easier management of these instances there is a modified [Python HTTP server](https://docs.python.org/3/library/http.server.html). The server can also operate through a reverse proxy and has a `setup-gui.sh` script to prepare the config file and restart the proxy. Speaking of which the index of the GUI allows creation of a new instance at a path of the submitted name. This page can be secured with an access code set at `config/gui_password`. The `/status` page allows stopping, restarting, and removing of currently created containers.
 
 ## Config File Dictionary 
 

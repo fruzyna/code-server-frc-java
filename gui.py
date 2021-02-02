@@ -14,6 +14,8 @@ PASSWORD = read_config('config/gui_password').lower()
 SERVER_PATH = '/' + read_config('config/gui_path')
 EXTERNAL_URL = read_config('config/domain')
 
+SERVER_PATH = SERVER_PATH if SERVER_PATH != '/' else ''
+
 class ServerHandler(http.server.SimpleHTTPRequestHandler):
 
     # default response
@@ -35,6 +37,21 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
             for q in queries:
                 parts = q.split('=')
                 query[parts[0]] = parts[1].lower()
+
+        if self.path.startswith('/index.html') or self.path == '/':
+            body = '<form action="{0}/createInstance" id="body">'\
+                '<label for="code">Access Code:</label>'\
+                '<input type="password" name="code" value=""><br><br>'\
+                'Use only lowercase letters and numbers for the name and password.<br><br>'\
+                '<label for="name">First Name:</label>'\
+                '<input type="text" name="name" value=""><br><br>'\
+                '<label for="password">Password:</label>'\
+                '<input type="password" name="pass" value=""><br><br>'\
+                '<input type="submit" value="Create Instance">'\
+            '</form>'.format(SERVER_PATH)
+            with open('index.html', 'r') as f:
+                self.send_res(f.read().replace('BODY', body))
+            return
 
         if self.path.startswith('/stop'):
             if query['name']:
@@ -68,7 +85,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
             status_strs = str(subprocess.check_output(['docker', 'container', 'ls', '-a', '--format', '{{.Names}} {{.Status}} {{.Ports}}', '--filter', 'name=code-server-*']))[2:-1].split('\\n')
             
             # build table
-            table = '<table><tr><td>Name</td><td>Uptime</td><td>Port</td><td></td><td></td><td></td><td></td></tr>'
+            table = '<table id="body"><tr><td>Name</td><td>Uptime</td><td>Port</td><td></td><td></td><td></td><td></td></tr>'
             for line in status_strs:
                 if line.count(' ') >= 2:
                     words = line.split()
@@ -96,7 +113,8 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
             table += '</table>'
 
             # send table
-            self.send_res(table)
+            with open('index.html', 'r') as f:
+                self.send_res(f.read().replace('BODY', table))
             return
 
         if self.path.startswith('/createInstance'):
