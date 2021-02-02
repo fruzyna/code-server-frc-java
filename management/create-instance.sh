@@ -23,10 +23,15 @@ docker run -d --name $container_name \
 		   mail929/code-server-frc-java
 
 # generate reverse proxy entry
-config=$(<code.subfolder.conf.sample)
-config="${config/DOMAIN/$domain}"
-config="${config//NAME/$name}"
-config="${config/CONTAINER_PORT/$port}"
-tee ${proxy_path}/${name}.code.subfolder.conf <<< $config
-
-docker restart $proxy_container
+if [ ! -z "$proxy_path" ]
+then
+	config=$(<config/code.subfolder.conf.sample)
+	config="${config/DOMAIN/$domain}"
+	config="${config//NAME/$name}"
+	config="${config/CONTAINER_PORT/$port}"
+	tee ${proxy_path}/${name}.code.subfolder.conf <<< $config
+    if [ ! -z "$proxy_container" ]
+    then
+		docker restart $proxy_container
+    fi
+fi

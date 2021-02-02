@@ -11,5 +11,12 @@ container_name=code-server-${name}
 
 docker stop $container_name
 docker rm $container_name
-rm ${proxy_path}/${name}.code.subfolder.conf
-docker restart $proxy_container
+
+if [ ! -z "$proxy_path" ]
+then
+    rm ${proxy_path}/${name}.code.subfolder.conf
+    if [ ! -z "$proxy_container" ]
+    then
+        docker restart $proxy_container
+    fi
+fi

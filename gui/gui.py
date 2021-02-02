@@ -11,10 +11,10 @@ MIN_PORT = int(read_config('config/min_port'))
 MAX_PORT = int(read_config('config/max_port'))
 
 PASSWORD = read_config('config/gui_password').lower()
-SERVER_PATH = '/' + read_config('config/gui_path')
+SERVER_PATH = read_config('config/gui_path')
 EXTERNAL_URL = read_config('config/domain')
 
-SERVER_PATH = SERVER_PATH if SERVER_PATH != '/' else ''
+SERVER_PATH = '/' + SERVER_PATH if SERVER_PATH != '' else ''
 
 class ServerHandler(http.server.SimpleHTTPRequestHandler):
 
@@ -40,16 +40,16 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
 
         if self.path.startswith('/index.html') or self.path == '/':
             body = '<form action="{0}/createInstance" id="body">'\
-                '<label for="code">Access Code:</label>'\
+                '<label for="code">Access Code: </label>'\
                 '<input type="password" name="code" value=""><br><br>'\
                 'Use only lowercase letters and numbers for the name and password.<br><br>'\
-                '<label for="name">First Name:</label>'\
+                '<label for="name">First Name: </label>'\
                 '<input type="text" name="name" value=""><br><br>'\
-                '<label for="password">Password:</label>'\
+                '<label for="password">Password: </label>'\
                 '<input type="password" name="pass" value=""><br><br>'\
                 '<input type="submit" value="Create Instance">'\
             '</form>'.format(SERVER_PATH)
-            with open('index.html', 'r') as f:
+            with open('gui/index.html', 'r') as f:
                 self.send_res(f.read().replace('BODY', body))
             return
 
@@ -74,7 +74,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
         if self.path.startswith('/remove'):
             if query['name']:
                 # remove container and send redirect
-                status_strs = str(subprocess.check_output(['./remove-instance.sh', query['name'].split('-')[2]]))
+                status_strs = str(subprocess.check_output(['management/remove-instance.sh', query['name'].split('-')[2]]))
                 self.send_res('<meta http-equiv="refresh" content="10; URL={0}/status" />'.format(SERVER_PATH))
             else:
                 self.send_res('<h1>Error no name provided</h1>')
@@ -109,11 +109,12 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
                     else:
                         port = ''
                     ip = socket.gethostbyname(socket.gethostname())
-                    table += '<tr><td>{0}</td><td>{1}</td><td>{2}</td><td><a href="https://{6}/{0}">External Link</a></td><td><a href="http://{3}:{2}">Internal Link</a></td><td>{4}</td><td>{5}</td></tr>'.format(name, uptime, port, ip, control, remove, EXTERNAL_URL)
+                    external_url = '<a href="https://{6}/{0}">External Link</a>'.format(name, EXTERNAL_URL) if EXTERNAL_URL else ''
+                    table += '<tr><td>{0}</td><td>{1}</td><td>{2}</td><td><a href="http://{3}:{2}">Internal Link</a></td><td>{6}</td><td>{4}</td><td>{5}</td></tr>'.format(name, uptime, port, ip, control, remove, external_url)
             table += '</table>'
 
             # send table
-            with open('index.html', 'r') as f:
+            with open('gui/index.html', 'r') as f:
                 self.send_res(f.read().replace('BODY', table))
             return
 
@@ -139,7 +140,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
                     if 'pass' in query and query['pass'].isalnum():
                         if 'code' in query and query['code'] == PASSWORD:
                             # launch
-                            subprocess.Popen(['./create-instance.sh', query['name'], query['pass'], str(port)])
+                            subprocess.Popen(['management/create-instance.sh', query['name'], query['pass'], str(port)])
                             ip = socket.gethostbyname(socket.gethostname())
                             url = 'http://{0}:{1}</a>'.format(ip, port)
                             if EXTERNAL_URL:

@@ -5,7 +5,7 @@ domain=$(<config/domain)
 guipath=$(<config/gui_path)
 guiport=$(<config/gui_port)
 
-config=$(<code.subfolder.conf.sample)
+config=$(<config/code.subfolder.conf.sample)
 config="${config/DOMAIN/$domain}"
 config="${config//NAME/$guipath}"
 config="${config/CONTAINER_PORT/$guiport}"
