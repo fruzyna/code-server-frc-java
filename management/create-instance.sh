@@ -10,8 +10,10 @@ sudo=$(<config/sudo_password)
 proxy_container=$(<config/proxy_container)
 
 container_name=code-server-${name}
+volume_name=cs-${name}-vol
 
 # TODO create volume of limited size, without overwriting contents of /config
+docker volume create $volume_name
 
 # start docker container
 docker run -d --name $container_name \
@@ -19,6 +21,7 @@ docker run -d --name $container_name \
 		   -e PASSWORD=$2 -e SUDO_PASSWORD=$sudo \
 		   -p $port:8443 \
 		   --cpus 0.5 -m 2.0g --memory-swap 5g \
+		   -v $volume_name:/config
 		   --restart unless-stopped \
 		   mail929/code-server-frc-java
 

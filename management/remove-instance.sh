@@ -6,11 +6,13 @@ proxy_path=$(<config/proxy_path)
 proxy_container=$(<config/proxy_container)
 
 container_name=code-server-${name}
+volume_name=cs-${name}-vol
 
 # TODO remove volume
 
 docker stop $container_name
 docker rm $container_name
+docker volume rm $volume_name
 
 if [ ! -z "$proxy_path" ]
 then
